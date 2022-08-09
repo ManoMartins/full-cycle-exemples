@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"go-grpc/pb"
 	"google.golang.org/grpc"
+	"io"
+	"log"
 )
 
 func main() {
@@ -18,7 +20,8 @@ func main() {
 
 	client := pb.NewUserServiceClient(connection)
 
-	AddUser(client)
+	// AddUser(client)
+	AddUserVerbose(client)
 }
 
 func AddUser(client pb.UserServiceClient) {
@@ -35,4 +38,33 @@ func AddUser(client pb.UserServiceClient) {
 	}
 
 	fmt.Println(res)
+}
+
+func AddUserVerbose(client pb.UserServiceClient) {
+	req := &pb.User{
+		Id:    "1",
+		Name:  "John Doe",
+		Email: "john_doe@hmailc.com",
+	}
+
+	responseStream, err := client.AddUserVerbose(context.Background(), req)
+
+	if err != nil {
+		panic(err)
+	}
+
+	for {
+		stream, err := responseStream.Recv()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Fatalf("Could not receive stream: %v", err)
+		}
+
+		fmt.Println("Status:", stream.Status)
+
+	}
 }
