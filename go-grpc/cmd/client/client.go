@@ -23,7 +23,8 @@ func main() {
 
 	// AddUser(client)
 	// AddUserVerbose(client)
-	AddUsers(client)
+	// AddUsers(client)
+	AddUserStreamBoth(client)
 }
 
 func AddUser(client pb.UserServiceClient) {
@@ -108,4 +109,61 @@ func AddUsers(client pb.UserServiceClient) {
 	}
 
 	fmt.Println(res)
+}
+
+func AddUserStreamBoth(client pb.UserServiceClient) {
+	stream, err := client.AddUserStreamBoth(context.Background())
+
+	if err != nil {
+		log.Fatalf("Could not open stream: %v", err)
+	}
+
+	req := []*pb.User{
+		&pb.User{
+			Id:    "1",
+			Name:  "John Doe",
+			Email: "john_doe@gmail.com",
+		},
+		&pb.User{
+			Id:    "2",
+			Name:  "John Doe2",
+			Email: "john_doe@gmail.com",
+		},
+		&pb.User{
+			Id:    "3",
+			Name:  "John Doe3",
+			Email: "john_doe@gmail.com",
+		},
+	}
+
+	wait := make(chan int)
+
+	go func() {
+		for _, user := range req {
+			fmt.Println("Sending:", user.Name)
+			stream.Send(user)
+			time.Sleep(time.Second * 2)
+		}
+
+		stream.CloseSend()
+	}()
+
+	go func() {
+		for {
+			res, err := stream.Recv()
+
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				log.Fatalf("Could not receive stream: %v", err)
+			}
+
+			fmt.Println("Status:", res.Status)
+		}
+		close(wait)
+	}()
+
+	<-wait
 }
