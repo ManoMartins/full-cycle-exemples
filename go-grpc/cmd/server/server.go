@@ -1,6 +1,8 @@
 package main
 
 import (
+	"go-grpc/pb"
+	"go-grpc/services"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -13,6 +15,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
+	pb.RegisterUserServiceServer(grpcServer, services.NewUserService())
 
 	if err := grpcServer.Serve(lis); err != nil {
 		panic(err)
